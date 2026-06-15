@@ -29,7 +29,7 @@ readonly NC='\033[0m' # No Color
 readonly SCRIPT_NAME="Kosmos Environment Setup"
 readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly PYTHON_MIN_VERSION="3.11"
-readonly VENV_DIR="venv"
+readonly VENV_DIR=".venv-kosmos"  # "venv"
 
 #============================================================================
 # Helper Functions
@@ -403,7 +403,7 @@ main() {
     echo ""
     echo -e "${YELLOW}Note:${NC} Your virtual environment is currently activated in this shell."
     echo "To use Kosmos in a new terminal, run:"
-    echo "  ${BLUE}source $VENV_DIR/bin/activate${NC}"
+    echo -e "  ${BLUE}source $VENV_DIR/bin/activate${NC}"
 }
 
 # Run main function

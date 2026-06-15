@@ -21,10 +21,10 @@ from kosmos.literature.base_client import PaperMetadata, PaperSource
 # Load Environment at Module Import Time (before pytest collection)
 # ============================================================================
 
-# Load .env file immediately when conftest is imported
+"""Load .env defaults without overriding explicitly provided environment values."""
 _env_path = Path(__file__).parent.parent / ".env"
 if _env_path.exists():
-    load_dotenv(_env_path, override=True)
+    load_dotenv(_env_path, override=False)
     print(f"✅ Loaded environment from {_env_path}")
 else:
     print(f"⚠️  No .env file found at {_env_path}")

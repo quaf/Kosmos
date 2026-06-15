@@ -254,3 +254,35 @@
 {"action": "auto_approved", "user": "automatic", "request_id": "test_3", "details": {"reason": "low_risk"}, "timestamp": "2026-02-07T23:26:47.775018"}
 {"action": "approval_requested", "user": "system", "request_id": "test_4", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-02-07T23:26:47.776169"}
 {"action": "auto_approved", "user": "automatic", "request_id": "test_4", "details": {"reason": "low_risk"}, "timestamp": "2026-02-07T23:26:47.777421"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "high"}, "timestamp": "2026-06-15T14:00:23.067776"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.073313"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_123", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.073478"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "medium"}, "timestamp": "2026-06-15T14:00:23.077476"}
+{"action": "queued", "user": "system", "request_id": "test_123", "details": {}, "timestamp": "2026-06-15T14:00:23.078361"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "medium"}, "timestamp": "2026-06-15T14:00:23.084199"}
+{"action": "queued", "user": "system", "request_id": "test_123", "details": {}, "timestamp": "2026-06-15T14:00:23.084402"}
+{"action": "approved", "user": "user", "request_id": "test_123", "details": {}, "timestamp": "2026-06-15T14:00:23.085013"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "medium"}, "timestamp": "2026-06-15T14:00:23.101283"}
+{"action": "queued", "user": "system", "request_id": "test_123", "details": {}, "timestamp": "2026-06-15T14:00:23.101891"}
+{"action": "rejected", "user": "user", "request_id": "test_123", "details": {"reason": "User rejected"}, "timestamp": "2026-06-15T14:00:23.103006"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.114029"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_123", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.114602"}
+{"action": "override", "user": "admin", "request_id": "test_123", "details": {"old_status": "approved", "new_status": "rejected", "reason": "Security concern"}, "timestamp": "2026-06-15T14:00:23.114899"}
+{"action": "approval_requested", "user": "system", "request_id": "test_123", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.126368"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_123", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.126578"}
+{"action": "approval_requested", "user": "system", "request_id": "test_0", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.130658"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_0", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.130855"}
+{"action": "approval_requested", "user": "system", "request_id": "test_1", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.130954"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_1", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.131038"}
+{"action": "approval_requested", "user": "system", "request_id": "test_2", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.131117"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_2", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.131195"}
+{"action": "approval_requested", "user": "system", "request_id": "test_0", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.134849"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_0", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.134970"}
+{"action": "approval_requested", "user": "system", "request_id": "test_1", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.135053"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_1", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.135131"}
+{"action": "approval_requested", "user": "system", "request_id": "test_2", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.135248"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_2", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.135322"}
+{"action": "approval_requested", "user": "system", "request_id": "test_3", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.135398"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_3", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.135473"}
+{"action": "approval_requested", "user": "system", "request_id": "test_4", "details": {"operation": "test", "risk_level": "low"}, "timestamp": "2026-06-15T14:00:23.135549"}
+{"action": "auto_approved", "user": "automatic", "request_id": "test_4", "details": {"reason": "low_risk"}, "timestamp": "2026-06-15T14:00:23.135627"}
