@@ -102,6 +102,7 @@ class LiteLLMProvider(LLMProvider):
         self.max_tokens_default = config.get('max_tokens', 4096)
         self.temperature_default = config.get('temperature', 0.7)
         self.timeout = config.get('timeout', 120)
+        self.custom_llm_provider = config.get('custom_llm_provider')
 
         # Configure LiteLLM
         if self.api_key:
@@ -281,6 +282,7 @@ class LiteLLMProvider(LLMProvider):
                 api_key=self.api_key,
                 api_base=self.api_base,
                 timeout=self.timeout,
+                custom_llm_provider=self.custom_llm_provider,
                 **kwargs
             )
 
@@ -346,6 +348,7 @@ class LiteLLMProvider(LLMProvider):
                 api_key=self.api_key,
                 api_base=self.api_base,
                 timeout=self.timeout,
+                custom_llm_provider=self.custom_llm_provider,
                 **kwargs
             )
             return self._parse_response(response)
@@ -392,6 +395,7 @@ class LiteLLMProvider(LLMProvider):
                 api_key=self.api_key,
                 api_base=self.api_base,
                 timeout=self.timeout,
+                custom_llm_provider=self.custom_llm_provider,
                 **kwargs
             )
             return self._parse_response(response)
@@ -500,6 +504,7 @@ The response must match this schema: """ + json.dumps(schema, indent=2)
                 api_base=self.api_base,
                 timeout=self.timeout,
                 stream=True,
+                custom_llm_provider=self.custom_llm_provider,
                 **kwargs
             )
 
