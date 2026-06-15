@@ -1,23 +1,174 @@
 """
 Unit tests for Claude LLM client.
 
-Tests using REAL Anthropic API calls (not mocks).
-Requires ANTHROPIC_API_KEY environment variable.
-Uses claude-3-haiku for cost-effective testing.
+Tests using REAL Anthropic API calls (not mocks) or local LiteLLM endpoints.
+Requires ANTHROPIC_API_KEY for Claude tests, or LITELLM_API_BASE for local LiteLLM tests.
+Uses claude-3-haiku for cost-effective testing when using Anthropic.
 """
 
 import os
+import socket
+from urllib.parse import urlparse
+
 import pytest
 import json
 import uuid
+import re
 
 
-# Skip all tests if no API key
+def _is_host_port_open(url: str, timeout: float = 1.0) -> bool:
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname
+        port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+        if not host:
+            return False
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
+
+
+def _has_local_litellm_config() -> bool:
+    return bool(os.getenv("LITELLM_API_BASE"))
+
+
+def _probe_ollama_models(api_base: str, timeout: float = 1.0):
+    """Try a few common endpoints to discover available Ollama model ids.
+
+    Returns a list of candidate model ids (may be empty).
+    """
+    try:
+        import requests
+    except Exception:
+        return []
+
+    api_base = api_base.rstrip("/")
+    endpoints = [
+        api_base + "/v1/models",
+        api_base + "/models",
+        api_base + "/v1/ollama/models",
+        api_base + "/v1/engines",
+    ]
+
+    candidates = []
+    for url in endpoints:
+        try:
+            resp = requests.get(url, timeout=timeout)
+            if not resp.ok:
+                continue
+            data = resp.json()
+            # common shapes: list of strings, {'models': [...]}, or dict of id->meta
+            if isinstance(data, list):
+                for v in data:
+                    if isinstance(v, str):
+                        candidates.append(v)
+                    elif isinstance(v, dict):
+                        for k in ("id", "model", "name"):
+                            if k in v:
+                                candidates.append(v[k])
+                                break
+            elif isinstance(data, dict):
+                if "models" in data and isinstance(data["models"], list):
+                    for it in data["models"]:
+                        if isinstance(it, str):
+                            candidates.append(it)
+                        elif isinstance(it, dict):
+                            for k in ("id", "model", "name"):
+                                if k in it:
+                                    candidates.append(it[k])
+                                    break
+                else:
+                    # treat keys as model ids
+                    for k in data.keys():
+                        candidates.append(k)
+        except Exception:
+            continue
+
+    # Deduplicate while preserving order
+    seen = set()
+    out = []
+    for c in candidates:
+        if c not in seen:
+            seen.add(c)
+            out.append(c)
+    return out
+
+
+def _normalize_ollama_model_name(name: str) -> str:
+    """Normalize a model id to Ollama repo id rules."""
+    normalized = re.sub(r"[^A-Za-z0-9._-]", "-", name)
+    normalized = normalized.strip("-.")
+    return normalized
+
+
+def _choose_ollama_model(api_base: str, original_model: str, api_key: str | None):
+    """Select the best Ollama model id for the local endpoint."""
+    mapping_env = os.getenv("LITELLM_OLLAMA_MODEL_MAP", "")
+    mapping = {}
+    if mapping_env:
+        for pair in mapping_env.split(","):
+            if "=" in pair:
+                k, v = pair.split("=", 1)
+                mapping[k.strip()] = v.strip()
+
+    if original_model in mapping:
+        return mapping[original_model]
+
+    raw_model = original_model.split("/", 1)[1]
+    sanitized = _normalize_ollama_model_name(raw_model)
+
+    candidates = _probe_ollama_models(api_base)
+    if candidates:
+        normalized_candidates = {c: _normalize_ollama_model_name(c) for c in candidates}
+        # exact matches first
+        for candidate, normalized in normalized_candidates.items():
+            if candidate == raw_model or candidate == sanitized:
+                return candidate
+        # normalized matches
+        for candidate, normalized in normalized_candidates.items():
+            if normalized == sanitized:
+                return candidate
+        # best fuzzy matches
+        lowercase_raw = raw_model.lower()
+        for candidate in candidates:
+            if lowercase_raw in candidate.lower() or candidate.lower() in lowercase_raw:
+                return candidate
+
+    if api_key is None:
+        api_key = "test"
+
+    try:
+        import litellm
+    except ImportError:
+        return sanitized
+
+    if candidates:
+        for candidate in candidates:
+            try:
+                litellm.set_verbose = False
+                litellm.completion(
+                    model=candidate,
+                    messages=[{"role": "user", "content": "Hello"}],
+                    max_tokens=1,
+                    api_base=api_base,
+                    api_key=api_key,
+                    custom_llm_provider="ollama",
+                    timeout=10,
+                )
+                return candidate
+            except Exception:
+                continue
+
+    return sanitized
+
+
+# Skip all tests if no Anthropic API key and no local LiteLLM configuration
 pytestmark = [
     pytest.mark.requires_claude,
     pytest.mark.skipif(
-        not os.getenv("ANTHROPIC_API_KEY"),
-        reason="Requires ANTHROPIC_API_KEY for real LLM calls"
+        not (os.getenv("ANTHROPIC_API_KEY") or _has_local_litellm_config()),
+        reason="Requires ANTHROPIC_API_KEY for Claude tests or LITELLM_API_BASE for local LiteLLM tests"
     )
 ]
 
@@ -49,6 +200,81 @@ def cli_env():
         del os.environ['ANTHROPIC_API_KEY']
 
 
+@pytest.fixture(scope="session")
+def local_litellm_env():
+    """Return local LiteLLM provider configuration for local tests."""
+    try:
+        import litellm
+    except ImportError:
+        pytest.skip("LiteLLM package required for local LiteLLM tests")
+
+    api_base = os.getenv("LITELLM_API_BASE")
+    if not api_base:
+        pytest.skip("LITELLM_API_BASE is not set for local LiteLLM tests")
+
+    if not _is_host_port_open(api_base):
+        pytest.skip(f"LiteLLM endpoint is not reachable at {api_base}")
+
+    model = os.getenv("LITELLM_MODEL", "default_model")
+    api_key = os.getenv("LITELLM_API_KEY")
+    custom_provider = os.getenv("LITELLM_CUSTOM_PROVIDER", "openai")
+
+    # Normalize OpenAI-compatible endpoint base URLs for litellm.
+    api_base = api_base.rstrip("/")
+    if api_base.endswith("/v1"):
+        api_base = api_base[:-3]
+
+    # Some OpenAI-compatible local endpoints require a non-empty api_key even if it's not validated.
+    if custom_provider == "openai" and not api_key:
+        api_key = "test"
+
+    # If the model string uses an Ollama-style prefix like "ollama/xxx",
+    # switch the provider to 'ollama' and select a usable model id.
+    if model and model.startswith("ollama/"):
+        custom_provider = "ollama"
+        model = _choose_ollama_model(api_base, model, api_key)
+
+    # Verify the local LiteLLM endpoint is usable for the specified model.
+    try:
+        litellm.set_verbose = False
+        litellm.completion(
+            model=model,
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=1,
+            api_base=api_base,
+            api_key=api_key,
+            custom_llm_provider=custom_provider,
+            timeout=10,
+        )
+    except Exception as e:
+        extra = ""
+        if custom_provider == "ollama":
+            try:
+                models = _probe_ollama_models(api_base)
+                if models:
+                    sample = models[:6]
+                    extra = (
+                        "\nAvailable Ollama models: " + ", ".join(sample)
+                        + "\nIf you want to map your .env value to one of these, set:\n"
+                        + "  LITELLM_OLLAMA_MODEL_MAP='ollama/your_model=THE_MODEL_ID'"
+                    )
+                else:
+                    extra = "\nCould not enumerate Ollama models from the endpoint."
+            except Exception:
+                extra = "\nCould not enumerate Ollama models from the endpoint."
+
+        pytest.skip(f"Local LiteLLM endpoint is not usable: {type(e).__name__}: {e}{extra}")
+
+    return {
+        "model": model,
+        "api_base": api_base,
+        "api_key": api_key,
+        "custom_llm_provider": custom_provider,
+        "max_tokens": 100,
+        "temperature": 0.0,
+    }
+
+
 class TestClaudeClientInitialization:
     """Test Claude client initialization."""
 
@@ -68,7 +294,9 @@ class TestClaudeClientInitialization:
         """Test initialization in CLI mode (48-char key)."""
         from kosmos.core.llm import ClaudeClient
 
-        client = ClaudeClient(model="claude-3-haiku-20240307")
+        # Disable cache during init to avoid config parsing side effects unrelated
+        # to CLI key detection.
+        client = ClaudeClient(model="claude-3-haiku-20240307", enable_cache=False)
 
         assert client.is_cli_mode
         assert len(client.api_key) == 48
@@ -269,7 +497,7 @@ class TestClaudeClientStatistics:
         """Test cost estimation in CLI mode (should be 0)."""
         from kosmos.core.llm import ClaudeClient
 
-        client = ClaudeClient(model="claude-3-haiku-20240307")
+        client = ClaudeClient(model="claude-3-haiku-20240307", enable_cache=False)
         # Note: CLI mode won't actually work with real API, but we can test initialization
         # This just tests that cli_mode is detected correctly
 
@@ -292,6 +520,59 @@ class TestClaudeClientStatistics:
         assert client.total_requests == 0
         assert client.total_input_tokens == 0
         assert client.total_output_tokens == 0
+
+
+class TestLiteLLMLocalProvider:
+    """Test local LiteLLM provider via LiteLLM configuration."""
+
+    @pytest.fixture
+    def local_provider(self, local_litellm_env):
+        from kosmos.core.providers.litellm_provider import LiteLLMProvider
+
+        return LiteLLMProvider(local_litellm_env)
+
+    def test_local_litellm_generate(self, local_provider):
+        """Test basic generation against a local LiteLLM endpoint."""
+        response = local_provider.generate(
+            prompt=unique_prompt("Say 'Hello' and nothing else.")
+        )
+
+        assert isinstance(response.content, str)
+        assert len(response.content) > 0
+
+    def test_local_litellm_generate_with_messages(self, local_provider):
+        """Test multi-turn generation against local LiteLLM."""
+        from kosmos.core.providers.base import Message
+
+        messages = [
+            Message(role="user", content="My name is Alice."),
+            Message(role="assistant", content="Hello Alice!"),
+            Message(role="user", content=unique_prompt("What is my name?"))
+        ]
+
+        response = local_provider.generate_with_messages(messages)
+
+        assert isinstance(response.content, str)
+        assert "alice" in response.content.lower()
+
+    def test_local_litellm_generate_structured(self, local_provider):
+        """Test structured JSON output from local LiteLLM."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "greeting": {"type": "string"}
+            }
+        }
+
+        result = local_provider.generate_structured(
+            prompt=unique_prompt("Return a JSON object with greeting 'hello'."),
+            schema=schema
+        )
+
+        assert isinstance(result, dict)
+        assert "greeting" in result or (
+            "properties" in result and "greeting" in result["properties"]
+        )
 
 
 class TestClaudeClientSingleton:
