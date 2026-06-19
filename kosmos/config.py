@@ -20,7 +20,7 @@ _DEFAULT_CLAUDE_HAIKU_MODEL = "claude-haiku-4-5"
 def parse_comma_separated(v):
     """Parse comma-separated string into list for Pydantic V2 compatibility."""
     if v is None or v == "":
-        return None  # Let field default handle it
+        return []  # Treat empty/unset as empty list to avoid validation errors
     if isinstance(v, str):
         return [x.strip() for x in v.split(',') if x.strip()]
     return v
@@ -429,7 +429,7 @@ class LoggingConfig(BaseSettings):
         alias="STAGE_TRACKING_FILE"
     )
 
-    model_config = SettingsConfigDict(populate_by_name=True)
+    model_config = SettingsConfigDict(populate_by_name=True, env_parse_enums=True)
 
 
 class LiteratureConfig(BaseSettings):
@@ -1078,8 +1078,8 @@ class KosmosConfig(BaseSettings):
     def validate_dependencies(self) -> List[str]:
         """
         Check if all required dependencies are available.
-
         Returns:
+
             List[str]: List of missing dependencies (empty if all present)
         """
         missing = []
