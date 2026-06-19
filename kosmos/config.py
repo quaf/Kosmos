@@ -387,8 +387,10 @@ class LoggingConfig(BaseSettings):
     )
 
     # Enhanced debug configuration
-    debug_level: Literal[0, 1, 2, 3] = Field(
+    debug_level: int = Field(
         default=0,
+        ge=0,
+        le=3,
         description="Debug verbosity: 0=off, 1=critical path, 2=full trace, 3=data dumps",
         alias="DEBUG_LEVEL"
     )
@@ -429,7 +431,7 @@ class LoggingConfig(BaseSettings):
         alias="STAGE_TRACKING_FILE"
     )
 
-    model_config = SettingsConfigDict(populate_by_name=True, env_parse_enums=True)
+    model_config = SettingsConfigDict(populate_by_name=True)
 
 
 class LiteratureConfig(BaseSettings):
