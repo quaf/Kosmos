@@ -108,14 +108,20 @@ BOX_STYLES = {
 
 def get_domain_color(domain: str) -> str:
     """Get color for a domain."""
-    domain_lower = domain.lower()
-    return COLORS.get(domain_lower, COLORS["general"])
+    if domain: 
+        domain_lower = domain.lower()
+        return COLORS.get(domain_lower, COLORS["general"])
+    else:
+        return COLORS["general"]
 
 
 def get_state_color(state: str) -> str:
     """Get color for a state."""
-    state_lower = state.lower()
-    return COLORS.get(state_lower, COLORS["muted"])
+    if state:
+        state_lower = state.lower()
+        return COLORS.get(state_lower, COLORS["muted"])
+    else:
+        return COLORS["muted"]
 
 
 def get_metric_color(value: float, thresholds: dict = None) -> str:
