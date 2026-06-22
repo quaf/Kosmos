@@ -63,7 +63,7 @@ class ResultsViewer:
         # Create overview panel
         overview_text = [
             f"**Run ID:** {run_id}",
-            f"**Domain:** {domain.title()}",
+            f"**Domain:** {domain.title() if domain else 'No Title'}",
             f"**State:** {state}",
             f"**Progress:** Iteration {iteration}/{max_iterations} ({iteration/max_iterations*100:.1f}%)",
             "",
